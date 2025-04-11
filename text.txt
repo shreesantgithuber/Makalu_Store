@@ -1,0 +1,279 @@
+'use client';
+
+
+
+import Link from 'next/link';
+
+import { useState, useEffect } from 'react';
+
+
+
+const DashboardPage = () => {
+
+  const [loading, setLoading] = useState(true);
+
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const [productCounts, setProductCounts] = useState({});
+
+  const [recentActivity, setRecentActivity] = useState([]);
+
+
+
+  useEffect(() => {
+
+    const checkAdmin = async () => {
+
+      try {
+
+        const response = await fetch('/api/auth/session'); // Assuming you have this endpoint
+
+        const data = await response.json();
+
+        if (data?.user?.isAdmin) {
+
+          setIsAdmin(true);
+
+        } else {
+
+          // Redirect to login if not admin (you'll need useRouter here if you uncomment it)
+
+          console.log('Not an admin');
+
+          // router.push('/login');
+
+        }
+
+      } catch (error) {
+
+        console.error('Error checking session:', error);
+
+        // router.push('/login');
+
+      } finally {
+
+        setLoading(false);
+
+      }
+
+    };
+
+
+
+    const fetchDashboardData = async () => {
+
+      try {
+
+        const productCountsResponse = await fetch('/api/dashboard/product-counts'); // Endpoint to get counts
+
+        const productCountsData = await productCountsResponse.json();
+
+        setProductCounts(productCountsData);
+
+
+
+        const activityResponse = await fetch('/api/dashboard/recent-activity'); // Endpoint for recent activity
+
+        const activityData = await activityResponse.json();
+
+        setRecentActivity(activityData);
+
+      } catch (error) {
+
+        console.error('Error fetching dashboard data:', error);
+
+      }
+
+    };
+
+
+
+    checkAdmin();
+
+    fetchDashboardData();
+
+  }, []);
+
+
+
+  if (loading) {
+
+    return <div className="flex justify-center items-center h-screen bg-gray-100">Loading...</div>;
+
+  }
+
+
+
+  if (!isAdmin) {
+
+    return <div className="flex justify-center items-center h-screen bg-gray-100">Not Authorized</div>;
+
+  }
+
+
+
+  const productTypes = [
+
+    { name: 'Tents', slug: 'tents' },
+
+    { name: 'Box Tents', slug: 'box-tents' },
+
+    { name: 'Dining Tents', slug: 'dining-tents' },
+
+    { name: 'Kitchen Tents', slug: 'kitchen-tents' },
+
+    { name: 'Shower Tents', slug: 'shower-tents' },
+
+    { name: 'Toilet Tents', slug: 'toilet-tents' },
+
+    { name: 'Chairs', slug: 'chairs' },
+
+    { name: 'Tables', slug: 'tables' },
+
+    { name: 'Oxygen', slug: 'oxygen' },
+
+    { name: 'Max and Regulators', slug: 'max-and-regulators' },
+
+    { name: 'Radio Sets', slug: 'radio-sets' },
+
+  ];
+
+
+
+  return (
+
+    <div className="min-h-screen bg-gray-100 py-6 px-4 sm:px-6 lg:px-8">
+
+      <div className="max-w-7xl mx-auto">
+
+        <h1 className="text-3xl font-semibold text-gray-800 mb-6">Admin Dashboard</h1>
+
+
+
+        {/* Product Overview Section */}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+
+          {productTypes.map((product) => (
+
+            <Link
+
+              key={product.slug}
+
+              href={`/admin/${product.slug}`}
+
+              className="block p-6 rounded-md shadow-md bg-white hover:bg-gray-100 transition duration-300"
+
+            >
+
+              <h2 className="text-lg font-medium text-gray-800 mb-2">{product.name}</h2>
+
+              <p className="text-sm text-gray-600">
+
+                Total: {productCounts[product.slug] ? productCounts[product.slug].total : 'N/A'}
+
+              </p>
+
+              <p className="text-sm text-green-600">
+
+                Available: {productCounts[product.slug] ? productCounts[product.slug].available : 'N/A'}
+
+              </p>
+
+              <p className="text-sm text-yellow-600">
+
+                Out on Trek: {productCounts[product.slug] ? productCounts[product.slug].outOnTrek : 'N/A'}
+
+              </p>
+
+              <p className="text-sm text-blue-600">
+
+                Returned: {productCounts[product.slug] ? productCounts[product.slug].returned : 'N/A'}
+
+              </p>
+
+            </Link>
+
+          ))}
+
+        </div>
+
+
+
+        {/* Recent Activity Section */}
+
+        <div className="bg-white shadow-md rounded-md p-6 mb-8">
+
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Activity</h2>
+
+          {recentActivity.length > 0 ? (
+
+            <ul className="divide-y divide-gray-200">
+
+              {recentActivity.map((activity) => (
+
+                <li key={activity._id} className="py-3">
+
+                  <p className="text-gray-700">{activity.description}</p>
+
+                  <p className="text-sm text-gray-500">{new Date(activity.date).toLocaleString()}</p>
+
+                </li>
+
+              ))}
+
+            </ul>
+
+          ) : (
+
+            <p className="text-gray-500">No recent activity to display.</p>
+
+          )}
+
+        </div>
+
+
+
+        {/* Quick Actions Section */}
+
+        <div className="bg-white shadow-md rounded-md p-6">
+
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+
+            <Link href="/admin/add-product" className="block p-4 rounded-md bg-blue-500 hover:bg-blue-600 text-white text-center transition duration-300">
+
+              Add New Product
+
+            </Link>
+
+            <Link href="/admin/assign-product" className="block p-4 rounded-md bg-green-500 hover:bg-green-600 text-white text-center transition duration-300">
+
+              Assign Product to Trek
+
+            </Link>
+
+            <Link href="/admin/receive-product" className="block p-4 rounded-md bg-yellow-500 hover:bg-yellow-600 text-white text-center transition duration-300">
+
+              Mark Product as Returned
+
+            </Link>
+
+            {/* Add more quick actions as needed */}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  );
+
+};
+
+
+
+export default DashboardPage; can you change the ui . Currently it doesnot looks attractive. please make it like table format not a fully table . keep the background something like black not a full black . do as best as you can and instead of title Admin Dashboard keep Makalu General Store. 
